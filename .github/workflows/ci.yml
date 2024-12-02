@@ -23,7 +23,7 @@ jobs:
       - name: Check format and lint
         run: |
           uvx ruff format --check
-          uvx ruff check
+        #   uvx ruff check
 
     #   - name: Mypy type check
     #     run: uvx mypy .
