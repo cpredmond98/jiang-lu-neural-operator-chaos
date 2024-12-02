@@ -2,29 +2,39 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import pdb, os, time
+
 path = os.getcwd()
 os.chdir(path)
 import sys
+
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 from eval_scripts.LE import lyapunov
 from tqdm import tqdm
 
+
 def get_all_data(dataset, num_workers=30, shuffle=False):
     dataset_size = len(dataset)
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=dataset_size,
-                             num_workers=num_workers, shuffle=shuffle)
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=dataset_size, num_workers=num_workers, shuffle=shuffle
+    )
     all_data = {}
     for i_batch, sample_batched in tqdm(enumerate(data_loader)):
         all_data = sample_batched
     return all_data
 
-def cal_LE(operator, args, noisy_scale = 0, x_len = 200, calculate_l2 = True):
+
+def cal_LE(operator, args, noisy_scale=0, x_len=200, calculate_l2=True):
     if args.l96:
         from dataloader.dataloader_l96 import TrainingData, TestingData
-        TestingData_Initial = TestingData(200, noisy_scale = args.noisy_scale, convert_to_pil = False)
-        TestingData_eval = TestingData(200, noisy_scale = noisy_scale, convert_to_pil = False)
+
+        TestingData_Initial = TestingData(
+            200, noisy_scale=args.noisy_scale, convert_to_pil=False
+        )
+        TestingData_eval = TestingData(
+            200, noisy_scale=noisy_scale, convert_to_pil=False
+        )
 
     all_data_initial = get_all_data(TestingData_Initial)
     all_data_eval = get_all_data(TestingData_eval)
@@ -47,8 +57,14 @@ def cal_LE(operator, args, noisy_scale = 0, x_len = 200, calculate_l2 = True):
                 states = torch.from_numpy(states).to(args.gpu).float()
             states = states.reshape(2, 1, -1)
             model.eval()
-            states = model(states, params_i.repeat(states.shape[0], 1)).cpu().data.numpy().squeeze()
+            states = (
+                model(states, params_i.repeat(states.shape[0], 1))
+                .cpu()
+                .data.numpy()
+                .squeeze()
+            )
             return states
+
         return step
 
     def step_wrapper_spectrum(model, params_i, args):
@@ -57,8 +73,14 @@ def cal_LE(operator, args, noisy_scale = 0, x_len = 200, calculate_l2 = True):
                 states = torch.from_numpy(states).to(args.gpu).float()
             states = states.reshape(states.shape[0], 1, -1)
             model.eval()
-            states = model(states, params_i.repeat(states.shape[0], 1)).cpu().data.numpy().squeeze()
+            states = (
+                model(states, params_i.repeat(states.shape[0], 1))
+                .cpu()
+                .data.numpy()
+                .squeeze()
+            )
             return states
+
         return step
 
     LE_result_list = []
@@ -68,11 +90,19 @@ def cal_LE(operator, args, noisy_scale = 0, x_len = 200, calculate_l2 = True):
         operator.eval()
         step_fn = step_wrapper(operator, param_i, args)
         step_fn_spectrum = step_wrapper_spectrum(operator, param_i, args)
-        os.makedirs(f'output_folder/LE_results', exist_ok = True)
+        os.makedirs(f"output_folder/LE_results", exist_ok=True)
         if args.l96:
             Ttr = 100
             total_step = 1000
             use_dapper = False
-            LE_result = lyapunov(step_fn, total_step, x0_i, d0 = 1e-2, delta_t=0.1, Ttr=Ttr, show_progress=True)
+            LE_result = lyapunov(
+                step_fn,
+                total_step,
+                x0_i,
+                d0=1e-2,
+                delta_t=0.1,
+                Ttr=Ttr,
+                show_progress=True,
+            )
             LE_result_list.append([param_i.cpu().data.numpy(), LE_result])
-            torch.save(LE_result_list, f'output_folder/LE_results/{args.prefix}.pth')
+            torch.save(LE_result_list, f"output_folder/LE_results/{args.prefix}.pth")

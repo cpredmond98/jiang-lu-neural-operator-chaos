@@ -1,0 +1,11 @@
+{
+    "paths": {
+        "data_dir": "data",
+        "artifacts_dir": "artifacts",
+        "logs_dir": "logs",
+        "outputs": {
+            "runs_dir": "outputs/runs",
+            "checkpoints_dir": "outputs/checkpoints"
+        }
+    }
+}

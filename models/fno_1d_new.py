@@ -1,5 +1,5 @@
 """
-Modification based on FNO. 
+Modification based on FNO.
 """
 
 import numpy as np
@@ -36,10 +36,14 @@ class SpectralConv1d(nn.Module):
 
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.modes1 = modes1  #Number of Fourier modes to multiply, at most floor(N/2) + 1
+        self.modes1 = (
+            modes1  # Number of Fourier modes to multiply, at most floor(N/2) + 1
+        )
 
-        self.scale = (1 / (in_channels*out_channels))
-        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, 2))
+        self.scale = 1 / (in_channels * out_channels)
+        self.weights1 = nn.Parameter(
+            self.scale * torch.rand(in_channels, out_channels, self.modes1, 2)
+        )
 
     # Complex multiplication
     def compl_mul1d(self, input, weights):
@@ -56,10 +60,19 @@ class SpectralConv1d(nn.Module):
         """
         batchsize = x.shape[0]
         x_ft = torch.fft.rfft(x)
-        out_ft = torch.zeros(batchsize, self.out_channels, x.size(-1)//2 + 1,  device=x.device, dtype=torch.cfloat)
-        out_ft[:, :, :self.modes1] = self.compl_mul1d(x_ft[:, :, :self.modes1], torch.view_as_complex(self.weights1))
+        out_ft = torch.zeros(
+            batchsize,
+            self.out_channels,
+            x.size(-1) // 2 + 1,
+            device=x.device,
+            dtype=torch.cfloat,
+        )
+        out_ft[:, :, : self.modes1] = self.compl_mul1d(
+            x_ft[:, :, : self.modes1], torch.view_as_complex(self.weights1)
+        )
         x = torch.fft.irfft(out_ft, n=x.size(-1))
         return x
+
 
 class FNO1d(nn.Module):
     def __init__(self, modes, width):
@@ -80,8 +93,8 @@ class FNO1d(nn.Module):
 
         self.modes1 = modes
         self.width = width
-        self.padding = 2 # pad the domain if input is non-periodic
-        self.fc0 = nn.Linear(3, self.width) # input channel is 2: (a(x), x)
+        self.padding = 2  # pad the domain if input is non-periodic
+        self.fc0 = nn.Linear(3, self.width)  # input channel is 2: (a(x), x)
         base_dim = 256
 
         self.conv0 = SpectralConv1d(self.width, self.width, self.modes1)
@@ -105,8 +118,8 @@ class FNO1d(nn.Module):
         x = x.permute(0, 2, 1)
         grid = self.get_grid(x.shape, x.device)
         x = torch.cat((x, grid), dim=-1)
-        param = param[:,None].expand(-1, x.shape[1], -1)
-        x = torch.cat([x, param], dim = -1)
+        param = param[:, None].expand(-1, x.shape[1], -1)
+        x = torch.cat([x, param], dim=-1)
         x = self.fc0(x)
         x = x.permute(0, 2, 1)
 

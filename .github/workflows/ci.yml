@@ -1,0 +1,39 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Add uv tools
+        run: |
+          uv tool install ruff
+          uv tool install mypy
+
+      - name: Check format and lint
+        run: |
+          uvx ruff format --check
+          uvx ruff check
+
+    #   - name: Mypy type check
+    #     run: uvx mypy .
+
+      - name: Test neural chaos library
+        run: |
+          uv sync --dev
+          uv run pytest packages/neural_chaos/tests/ --cov=packages/neural_chaos/src/ --cov-report=xml:coverage/neural_chaos.xml --cov-report=term
+
+      - name: Test app
+        run: |
+          uv sync --dev
+          uv run pytest tests/ --cov=src/ --cov-report=xml:coverage/app.xml --cov-report=term

@@ -3,11 +3,23 @@ from scipy.integrate import solve_ivp
 import torch, pdb, tqdm
 
 
-def lyapunov(step, T, u0, d0=1e-2, inittest=None, Ttr=0, delta_t=1, d0_upper=None, d0_lower=None, show_progress=False, **kwargs):
+def lyapunov(
+    step,
+    T,
+    u0,
+    d0=1e-2,
+    inittest=None,
+    Ttr=0,
+    delta_t=1,
+    d0_upper=None,
+    d0_lower=None,
+    show_progress=False,
+    **kwargs,
+):
     if d0_upper is None:
-        d0_upper = d0*1e+3
+        d0_upper = d0 * 1e3
     if d0_lower is None:
-        d0_lower = d0*1e-3
+        d0_lower = d0 * 1e-3
 
     def inittest_default(D):
         return lambda state1, d0: state1 + d0 / np.sqrt(D)
@@ -15,7 +27,7 @@ def lyapunov(step, T, u0, d0=1e-2, inittest=None, Ttr=0, delta_t=1, d0_upper=Non
     def lambda_dist(states):
         u1 = states[0]
         u2 = states[1]
-        return np.sqrt(np.sum((u1 - u2)**2))
+        return np.sqrt(np.sum((u1 - u2) ** 2))
 
     def lambda_rescale(states, a):
         u1 = states[0]
